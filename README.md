@@ -40,20 +40,39 @@ This repository contains Kubernetes manifests for the ML Platform. It follows a 
 |-------------|-------------|---------------------|
 | **prometheus-stack** | Prometheus, Grafana & Alertmanager | [prometheus-community/helm-charts](https://github.com/prometheus-community/helm-charts) |
 
+## Infrastructure
+
+| Component | Description |
+|-----------|-------------|
+| **kubeadm** | Kubernetes cluster setup with DRA support (v1.34.2) |
+
+### Cluster Features
+
+- Kubernetes **v1.34.2**
+- **DRA Enabled**: `resource.k8s.io/v1beta1` API for Dynamic Resource Allocation
+- **Feature Gates**: `DynamicResourceAllocation=true` on all components
+- Container runtime: containerd with systemd cgroup driver
+
 ## Structure
 
 ```
-applications/
-├── <app-name>/
-│   ├── README.md           # Application documentation
-│   ├── upstream/           # Upstream manifests (from vendor)
-│   │   └── install.sh      # Helm/kubectl installation script
-│   ├── base/               # Base kustomization
-│   │   ├── kustomization.yaml
-│   │   └── namespace.yaml
-│   └── overlays/           # Environment-specific overlays
-│       └── <overlay-name>/
-│           └── kustomization.yaml
+├── infra/                      # Infrastructure configuration
+│   └── kubeadm/                # Kubernetes cluster setup
+│       ├── kubeadm-config.yaml
+│       ├── kubeadm-join-config.yaml
+│       ├── install-prerequisites.sh
+│       └── init-cluster.sh
+└── applications/               # Application manifests
+    └── <app-name>/
+        ├── README.md
+        ├── upstream/
+        │   └── install.sh
+        ├── base/
+        │   ├── kustomization.yaml
+        │   └── namespace.yaml
+        └── overlays/
+            └── <overlay-name>/
+                └── kustomization.yaml
 ```
 
 ## Usage
@@ -81,7 +100,21 @@ cd applications/<app-name>/upstream
 
 ## Quick Start
 
-Install the core ML Platform components:
+### Step 0: Setup Kubernetes Cluster
+
+```bash
+# On all nodes - install prerequisites
+cd infra/kubeadm
+sudo ./install-prerequisites.sh
+
+# On control plane node - initialize cluster
+sudo ./init-cluster.sh
+
+# On worker nodes - join cluster (use command from init output)
+sudo kubeadm join <control-plane>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+```
+
+### Step 1: Install Platform Components
 
 ```bash
 # 1. Identity & Access
