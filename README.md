@@ -111,6 +111,8 @@ kubectl apply -k applications/kubeflow/overlays/istio/
 kubectl apply -k applications/kubeflow/overlays/jupyter-notebook/enterprise-gateway/
 ```
 
+### Version: 1
+
 ## License
 
 See [LICENSE](LICENSE) for details.
