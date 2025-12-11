@@ -3,6 +3,8 @@ kind: Namespace
 metadata:
   name: enterprise-gateway
   labels:
+    app: enterprise-gateway
     app.kubernetes.io/name: enterprise-gateway
     app.kubernetes.io/part-of: kubeflow
+    istio-injection: disabled
 

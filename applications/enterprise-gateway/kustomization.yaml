@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Enterprise Gateway for Jupyter Notebooks
+# Installation: Helm chart from jupyter/enterprise-gateway or Kustomize
+#
+# To install with Helm:
+#   helm repo add jupyter https://jupyter-server.github.io/enterprise_gateway/
+#   helm repo update
+#   helm install enterprise-gateway jupyter/enterprise-gateway \
+#       --namespace enterprise-gateway \
+#       --create-namespace \
+#       -f base/values.yaml
+#
+# To install with Kustomize:
+#   kubectl apply -k .
+
+namespace: enterprise-gateway
+
+resources:
+  - namespace.yaml
+  - base/serviceaccount.yaml
+  - base/clusterrole.yaml
+  - base/clusterrolebinding.yaml
+  - base/service.yaml
+  - overlays/configmap/tf-gpu-sharing.yaml
+  - overlays/configmap/pytorch-gpu-sharing.yaml
+  - overlays/deployment/enterprise-gateway.yaml
+  - overlays/kyverno/inject-jeg-env.yaml
+
+configMapGenerator:
+  - name: enterprise-gateway-helm-values
+    files:
+      - base/values.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: enterprise-gateway
+      app.kubernetes.io/part-of: kubeflow
+      app.kubernetes.io/component: enterprise-gateway
+    includeSelectors: false
+

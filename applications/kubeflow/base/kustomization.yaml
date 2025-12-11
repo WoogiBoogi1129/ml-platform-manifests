@@ -2,13 +2,27 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base configuration for kubeflow
-# Upstream manifests should be placed in ../upstream/ directory
-# This base can be extended by overlays
+# Installation: Kustomize from upstream https://github.com/kubeflow/manifests
+#
+# Kubeflow is installed via Kustomize, not Helm.
+# See values.yaml for configuration reference.
+#
+# To install full Kubeflow:
+#   git clone https://github.com/kubeflow/manifests.git
+#   cd manifests
+#   while ! kustomize build example | kubectl apply -f -; do echo "Retrying..."; sleep 10; done
+#
+# Or install individual components via overlays in this repository.
 
 namespace: kubeflow
 
 resources:
   - namespace.yaml
+
+configMapGenerator:
+  - name: kubeflow-config-reference
+    files:
+      - values.yaml
 
 labels:
   - pairs:

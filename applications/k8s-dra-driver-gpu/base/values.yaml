@@ -1,0 +1,8 @@
+USER-SUPPLIED VALUES:
+featureGates:
+  MPSSupport: true
+  TimeSlicingSettings: true
+gpuResourcesEnabledOverride: true
+resources:
+  gpus:
+    enabled: true

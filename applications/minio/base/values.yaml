@@ -1,0 +1,11 @@
+USER-SUPPLIED VALUES:
+mode: standalone
+persistence:
+  size: 100Gi
+resources:
+  requests:
+    memory: 1Gi
+rootPassword: minio123
+rootUser: minioadmin
+service:
+  type: ClusterIP

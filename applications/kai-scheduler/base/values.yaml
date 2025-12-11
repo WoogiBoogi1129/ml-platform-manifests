@@ -1,0 +1,10 @@
+USER-SUPPLIED VALUES:
+USER-SUPPLIED VALUES: null
+admission:
+  gpuPodRuntimeClassName: nvidia-cdi
+binder:
+  cdi: true
+  resourceReservation:
+    runtimeClassName: nvidia-cdi
+global:
+  gpuSharing: true

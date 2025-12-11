@@ -2,13 +2,27 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base configuration for kueue
-# Upstream manifests should be placed in ../upstream/ directory
-# This base can be extended by overlays
+# Installation: kubectl manifests or Helm chart
+#
+# Option 1 - Using kubectl (recommended):
+#   kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/v0.10.0/manifests.yaml
+#
+# Option 2 - Using Helm:
+#   helm install kueue oci://us-central1-docker.pkg.dev/k8s-staging-images/charts/kueue \
+#       --version="v0.10.0" \
+#       --namespace kueue-system \
+#       --create-namespace \
+#       -f values.yaml
 
 namespace: kueue-system
 
 resources:
   - namespace.yaml
+
+configMapGenerator:
+  - name: kueue-helm-values
+    files:
+      - values.yaml
 
 labels:
   - pairs:

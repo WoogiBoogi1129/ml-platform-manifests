@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-gateway
+  namespace: enterprise-gateway
+  labels:
+    app: enterprise-gateway
+    app.kubernetes.io/name: enterprise-gateway
+    app.kubernetes.io/part-of: kubeflow
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8888
+      targetPort: 8888
+      protocol: TCP
+    - name: response
+      port: 8877
+      targetPort: 8877
+      protocol: TCP
+  selector:
+    gateway-selector: enterprise-gateway
+

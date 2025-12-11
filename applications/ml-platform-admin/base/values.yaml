@@ -1,0 +1,79 @@
+# ML Platform Admin Configuration
+# Custom application for ML Platform administration
+
+# Application configuration
+app:
+  name: ml-platform-admin
+  replicas: 1
+
+# Image configuration (update with your registry)
+image:
+  repository: ghcr.io/lehuannhatrang/ml-platform-admin
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8080
+
+# Resource configuration
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Environment variables
+env:
+  - name: LOG_LEVEL
+    value: info
+
+# Health checks
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# Ingress configuration (disabled by default)
+ingress:
+  enabled: false
+  # className: nginx
+  # hosts:
+  #   - host: admin.ml-platform.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+
+# RBAC configuration
+rbac:
+  create: true
+  # ClusterRole permissions for admin operations
+  clusterRole:
+    rules:
+      - apiGroups: [""]
+        resources: ["namespaces", "pods", "services", "configmaps", "secrets"]
+        verbs: ["get", "list", "watch", "create", "update", "delete"]
+      - apiGroups: ["kubeflow.org"]
+        resources: ["*"]
+        verbs: ["get", "list", "watch", "create", "update", "delete"]
+      - apiGroups: ["apps"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+        verbs: ["get", "list", "watch"]
+
+# Service account
+serviceAccount:
+  create: true
+  name: ml-platform-admin
+

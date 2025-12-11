@@ -1,0 +1,78 @@
+# Kueue Helm Values
+# Chart: oci://us-central1-docker.pkg.dev/k8s-staging-images/charts/kueue
+# Alternative: Install via manifests from upstream
+
+# Controller configuration
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Webhook configuration
+webhook:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+# Feature gates
+featureGates:
+  # Enable integration with Kubeflow Training Operator
+  TrainingOperatorIntegration: true
+  # Enable priority-based preemption
+  PriorityBasedPreemption: true
+
+# Integrations enabled
+integrations:
+  # Kubernetes batch/v1 Job
+  Job: true
+  # Kubeflow PyTorchJob
+  PyTorchJob: true
+  # Kubeflow TFJob
+  TFJob: true
+  # Kubeflow MPIJob
+  MPIJob: true
+  # Kubeflow XGBoostJob
+  XGBoostJob: true
+  # Kubeflow PaddleJob
+  PaddleJob: true
+  # Ray RayJob
+  RayJob: true
+  # Ray RayCluster
+  RayCluster: true
+
+# Metrics
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+
+# Leader election
+leaderElection:
+  enabled: true
+
+# Tolerations
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+
+# Node affinity
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Exists
+

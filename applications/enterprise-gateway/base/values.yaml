@@ -1,0 +1,107 @@
+# Jupyter Enterprise Gateway Helm Values
+# Chart: jupyter/enterprise-gateway
+# Repository: https://jupyter-server.github.io/enterprise_gateway/
+
+# Image configuration
+image:
+  repository: elyra/enterprise-gateway
+  tag: 3.2.3
+  pullPolicy: IfNotPresent
+
+# Gateway configuration
+gateway:
+  # Port for Jupyter client connections
+  port: 8888
+  # Port for kernel response connections
+  responsePort: 8877
+  
+  # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  logLevel: DEBUG
+  
+  # Kernel culling configuration
+  cullIdleTimeout: 3600      # Seconds before idle kernels are culled (1 hour)
+  cullInterval: 60           # Seconds between culling checks
+  cullConnected: true        # Cull kernels even if clients are connected
+  
+  # Kernel launch configuration
+  launchTimeout: 300         # Seconds to wait for kernel startup
+  
+  # Shared namespace mode
+  shareGatewayNamespace: true
+
+# Kernel configuration
+kernel:
+  # Cluster role for kernel pods
+  clusterRole: kernel-controller
+  
+  # Default service account for kernels
+  serviceAccountName: default
+  
+  # Allowed kernel names
+  allowedKernels:
+    - r_kubernetes
+    - python_kubernetes
+    - python_tf_kubernetes
+    - python_tf_gpu_kubernetes
+    - scala_kubernetes
+    - spark_r_kubernetes
+    - spark_python_kubernetes
+    - spark_scala_kubernetes
+    - spark_python_operator
+    - tf_gpu_sharing
+    - pytorch_gpu_sharing
+  
+  # Default kernel
+  defaultKernelName: python_kubernetes
+
+# Kernel specifications PVC (for custom kernelspecs)
+kernelspecsPvc:
+  enabled: false
+  # existingClaimName: ""
+  # storageClassName: ""
+  # size: 1Gi
+
+# Kernel Image Puller (KIP) - preload kernel images
+kip:
+  enabled: false
+  # pullPolicy: IfNotPresent
+  # interval: 300
+
+# Service account
+serviceAccount:
+  create: true
+  name: enterprise-gateway-sa
+
+# Resources
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 8888
+  responsePort: 8877
+
+# Ingress configuration (disabled by default)
+ingress:
+  enabled: false
+  # className: nginx
+  # hosts:
+  #   - host: enterprise-gateway.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix

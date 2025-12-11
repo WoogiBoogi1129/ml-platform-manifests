@@ -1,0 +1,124 @@
+# Kubeflow Configuration
+# Upstream Repository: https://github.com/kubeflow/manifests
+# Installation: Kustomize-based
+
+# This file documents the Kubeflow configuration options.
+# Kubeflow is installed via Kustomize, not Helm.
+# Use the overlays directory for customizations.
+
+# Kubeflow version
+version: v1.9.0
+
+# Components enabled (install via overlays)
+components:
+  # Core components
+  centraldashboard: true
+  admission-webhook: true
+  jupyter-web-app: true
+  notebook-controller: true
+  profiles-controller: true
+  volumes-web-app: true
+  tensorboard-controller: true
+  tensorboards-web-app: true
+  
+  # Training operators
+  training-operator: true
+  
+  # Pipelines
+  pipelines: true
+  
+  # AutoML
+  katib: true
+  
+  # Model serving
+  kserve: true
+
+# Authentication configuration
+auth:
+  # OIDC provider (Dex)
+  oidc:
+    issuer: http://dex.auth.svc.cluster.local:5556/dex
+    clientId: kubeflow-oidc-authservice
+    clientSecret: pUBnBOY80SnXgjibTYM9ZWNzY2xreNGQok
+  
+  # Static users for Dex (development only)
+  staticUsers:
+    - email: user@example.com
+      hash: $2y$12$ruoM7FqXrpVgaol44eRZW.4HWS8SAvg6KYVVSCIwKQPBmTpCm.EeO  # 12341234
+      username: user
+
+# Istio configuration
+istio:
+  enabled: true
+  clusterLocalGateway: cluster-local-gateway
+  ingressGateway: kubeflow-gateway
+
+# Default profile configuration
+defaultProfile:
+  owner: admin@example.com
+  name: admin
+
+# Pipeline configuration
+pipelines:
+  persistence:
+    # MinIO configuration for pipeline artifacts
+    minio:
+      endpoint: minio.minio.svc.cluster.local:9000
+      accessKey: minio
+      secretKey: minio123
+      bucket: kubeflow-pipelines
+  
+  # MySQL for pipeline metadata
+  mysql:
+    host: mysql.kubeflow.svc.cluster.local
+    port: 3306
+    database: mlpipeline
+    user: root
+    password: ""
+
+# Notebook configuration
+notebooks:
+  # Default notebook image
+  defaultImage: kubeflownotebookswg/jupyter-scipy:v1.9.0
+  
+  # Spawner configuration
+  spawner:
+    # GPU vendor
+    gpuVendor: nvidia.com/gpu
+    
+    # Cull idle notebooks
+    cullIdleTime: 1440  # 24 hours
+    cullIdleEnable: true
+
+# Katib configuration
+katib:
+  persistence:
+    mysql:
+      host: mysql.kubeflow.svc.cluster.local
+      port: 3306
+      database: katib
+      user: root
+      password: ""
+
+# Resource quotas (per profile namespace)
+resourceQuota:
+  hard:
+    cpu: "8"
+    memory: 32Gi
+    nvidia.com/gpu: "2"
+    persistentvolumeclaims: "10"
+    requests.storage: 100Gi
+
+# Limit ranges (per profile namespace)
+limitRange:
+  default:
+    cpu: "1"
+    memory: 2Gi
+  defaultRequest:
+    cpu: 100m
+    memory: 256Mi
+  max:
+    cpu: "4"
+    memory: 16Gi
+    nvidia.com/gpu: "1"
+

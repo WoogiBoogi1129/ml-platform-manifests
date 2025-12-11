@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: keycloak
+  labels:
+    app: keycloak
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: http
+      name: http
+      nodePort: 32008
+  selector:
+    app: keycloak
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: keycloak
+  labels:
+    app: keycloak
+  name: keycloak-discovery
+spec:
+  selector:
+    app: keycloak
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: keycloak
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP

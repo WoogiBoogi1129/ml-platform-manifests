@@ -2,13 +2,25 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # Base configuration for minio
-# Upstream manifests should be placed in ../upstream/ directory
-# This base can be extended by overlays
+# Installation: Helm chart from minio/minio
+#
+# To install:
+#   helm repo add minio https://charts.min.io/
+#   helm repo update
+#   helm install minio minio/minio \
+#       --namespace minio \
+#       --create-namespace \
+#       -f values.yaml
 
 namespace: minio
 
 resources:
   - namespace.yaml
+
+configMapGenerator:
+  - name: minio-helm-values
+    files:
+      - values.yaml
 
 labels:
   - pairs:
