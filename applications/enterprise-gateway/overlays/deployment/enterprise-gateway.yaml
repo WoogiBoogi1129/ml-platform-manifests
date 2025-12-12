@@ -51,8 +51,9 @@ spec:
             - name: EG_KERNEL_LAUNCH_TIMEOUT
               value: "300"
             - name: EG_KERNEL_INFO_TIMEOUT
-            - name: EG_ALLOWED_KERNELS
-              value: '["r_kubernetes","python_kubernetes","python_tf_kubernetes","python_tf_gpu_kubernetes","scala_kubernetes","spark_r_kubernetes","spark_python_kubernetes","spark_scala_kubernetes","spark_python_operator","tf_gpu_sharing","pytorch_gpu_sharing"]'
+              value: "300"
+            # - name: EG_ALLOWED_KERNELS
+            #   value: '["r_kubernetes","python_kubernetes","python_tf_kubernetes","python_tf_gpu_kubernetes","scala_kubernetes","spark_r_kubernetes","spark_python_kubernetes","spark_scala_kubernetes","spark_python_operator","tf_gpu_sharing","pytorch_gpu_sharing"]'
             - name: EG_DEFAULT_KERNEL_NAME
               value: python_kubernetes
             - name: EG_INHERITED_ENVS
@@ -65,27 +66,15 @@ spec:
               protocol: TCP
             - containerPort: 8877
               protocol: TCP
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
           volumeMounts:
-            - mountPath: /usr/local/share/jupyter/kernels/tf_gpu_sharing
-              name: tf-gpu-shared-kernel
-            - mountPath: /usr/local/share/jupyter/kernels/pytorch_gpu_sharing
-              name: pytorch-gpu-shared-kernel
-      dnsPolicy: ClusterFirst
+            - name: shared-kernels
+              mountPath: /usr/local/share/jupyter/kernels
       restartPolicy: Always
-      schedulerName: default-scheduler
       securityContext: {}
       serviceAccount: enterprise-gateway-sa
       serviceAccountName: enterprise-gateway-sa
       terminationGracePeriodSeconds: 30
       volumes:
-        - configMap:
-            defaultMode: 420
-            name: kernel-spec-tf-gpu-sharing
-          name: tf-gpu-shared-kernel
-        - configMap:
-            defaultMode: 420
-            name: kernel-spec-pytorch-gpu-sharing
-          name: pytorch-gpu-shared-kernel
+        - name: shared-kernels
+          persistentVolumeClaim:
+            claimName: kernel-specs-pvc

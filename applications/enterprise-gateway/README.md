@@ -105,3 +105,4 @@ Enterprise Gateway integrates with Kubeflow Notebooks to provide remote kernel e
 | `KERNEL_CPUS` | CPU request for kernel |
 | `KERNEL_MEMORY` | Memory request for kernel |
 
+

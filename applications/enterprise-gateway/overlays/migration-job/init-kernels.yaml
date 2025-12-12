@@ -1,0 +1,142 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: install-kernels-secured
+  namespace: enterprise-gateway
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      containers:
+      - name: installer
+        image: elyra/enterprise-gateway:3.2.3
+        securityContext:
+          runAsUser: 0 # Run as Root to fix permissions
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "--- STARTING SECURE KERNEL INSTALLATION ---"
+            
+            # Locations
+            SOURCE_DEFAULTS="/usr/local/share/jupyter/kernels"
+            TARGET_DIR="/mnt/pvc"
+            IPYTHON_DIR="$TARGET_DIR/ipython_config/profile_default/startup"
+
+            # 1. CLEANUP (Wipe PVC)
+            echo "[1/4] Wiping old data..."
+            rm -rf $TARGET_DIR/*
+            mkdir -p $IPYTHON_DIR
+
+            # 2. WRITE SECURITY ENFORCER SCRIPT
+            echo "[2/4] Writing Security Script..."
+            cat <<EOF > $IPYTHON_DIR/00-enforce-limits.py
+            import os
+            import sys
+            
+            # Read limit from Env Var (set in kernel.json)
+            mem_limit_mb = os.environ.get('KERNEL_GPU_MEMORY')
+
+            if mem_limit_mb:
+                try:
+                    limit_mb = int(mem_limit_mb)
+                    
+                    # --- TENSORFLOW LOCK ---
+                    try:
+                        import tensorflow as tf
+                        gpus = tf.config.list_physical_devices('GPU')
+                        if gpus:
+                            for gpu in gpus:
+                                config = tf.config.LogicalDeviceConfiguration(memory_limit=limit_mb)
+                                tf.config.set_logical_device_configuration(gpu, [config])
+                            
+                            # Lock configuration by forcing initialization
+                            tf.config.list_logical_devices('GPU')
+                            print(f"✅ [System] TensorFlow Hard Limit: {limit_mb} MB")
+                    except ImportError: pass 
+
+                    # --- PYTORCH LOCK ---
+                    try:
+                        import torch
+                        if torch.cuda.is_available():
+                            total_mem = torch.cuda.get_device_properties(0).total_memory / (1024**2)
+                            fraction = min(limit_mb / total_mem, 1.0)
+                            
+                            torch.cuda.set_per_process_memory_fraction(fraction, 0)
+                            
+                            # MONKEY PATCH (Security Lock)
+                            def locked(*args, **kwargs): raise PermissionError("⛔ Admin has locked GPU Memory settings.")
+                            torch.cuda.set_per_process_memory_fraction = locked
+                            
+                            print(f"✅ [System] PyTorch Hard Limit: {fraction:.2f} of GPU")
+                    except ImportError: pass 
+
+                except Exception as e:
+                    print(f"⚠️ [System] Enforcer Error: {e}")
+            EOF
+
+            # 3. COPY DEFAULT KERNELS (Restore specific defaults)
+            echo "[3/4] Copying specific defaults..."
+            # Add or remove kernels from this list as needed
+            KERNELS_TO_COPY="r_kubernetes python_kubernetes python_tf_kubernetes scala_kubernetes spark_r_kubernetes spark_python_kubernetes spark_scala_kubernetes spark_python_operator"
+            
+            for KERNEL in $KERNELS_TO_COPY; do
+              if [ -d "$SOURCE_DEFAULTS/$KERNEL" ]; then
+                cp -r "$SOURCE_DEFAULTS/$KERNEL" "$TARGET_DIR/"
+                echo " - Restored $KERNEL"
+              fi
+            done
+
+            # 4. INSTALL CUSTOM KERNELS
+            echo "[4/4] Installing Custom GPU Kernels..."
+            install_custom_kernel() {
+              SRC=$1; NAME=$2; DEST="$TARGET_DIR/$NAME"
+              mkdir -p $DEST
+              cp $SRC/kernel.json $DEST/
+              cp $SRC/kernel-pod.yaml.j2 $DEST/
+              cp $SRC/launch_kubernetes.py $DEST/
+              chmod +x $DEST/launch_kubernetes.py
+              
+              echo " - Installed $NAME"
+            }
+
+            install_custom_kernel "/mnt/configmap-pytorch-4gb" "pytorch_gpu_sharing_4GB"
+            install_custom_kernel "/mnt/configmap-tf-4gb" "tf_gpu_sharing_4GB"
+            install_custom_kernel "/mnt/configmap-pytorch-8gb" "pytorch_gpu_sharing_8GB"
+            install_custom_kernel "/mnt/configmap-tf-8gb" "tf_gpu_sharing_8GB"
+
+            # 5. PERMISSIONS FIX (Root -> Jovyan)
+            chown -R 1000:100 $TARGET_DIR
+            chmod -R 755 $TARGET_DIR
+            
+            echo "--- DONE ---"
+
+        volumeMounts:
+        - name: kernels-pvc
+          mountPath: /mnt/pvc
+        - name: cm-pytorch-4gb
+          mountPath: /mnt/configmap-pytorch-4gb
+        - name: cm-tf-4gb
+          mountPath: /mnt/configmap-tf-4gb
+        - name: cm-pytorch-8gb
+          mountPath: /mnt/configmap-pytorch-8gb
+        - name: cm-tf-8gb
+          mountPath: /mnt/configmap-tf-8gb
+
+      volumes:
+      - name: kernels-pvc
+        persistentVolumeClaim:
+          claimName: kernel-specs-pvc
+      - name: cm-pytorch-4gb
+        configMap:
+          name: kernel-spec-pytorch-gpu-4gb
+      - name: cm-tf-4gb
+        configMap:
+          name: kernel-spec-tf-gpu-4gb
+      - name: cm-pytorch-8gb
+        configMap:
+          name: kernel-spec-pytorch-gpu-8gb
+      - name: cm-tf-8gb
+        configMap:
+          name: kernel-spec-tf-gpu-8gb
+
+      restartPolicy: OnFailure

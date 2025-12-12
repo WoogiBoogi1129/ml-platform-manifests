@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: kernel-spec-pytorch-gpu-sharing
+  name: kernel-spec-tf-gpu-4gb
   namespace: enterprise-gateway
 data:
   kernel-pod.yaml.j2: >
@@ -17,9 +17,9 @@ data:
             app: enterprise-gateway
             component: kernel
             source: kernel-pod.yaml
-            kai.scheduler/queue: default-queue
+            kai.scheduler/queue: "{{ kernel_kai_scheduler_queue }}"
         annotations:
-            gpu-fraction: "0.15"
+            gpu-memory: "{{ kernel_gpu_memory }}"
             cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
     spec:
         runtimeClassName: nvidia-cdi
@@ -80,20 +80,27 @@ data:
   kernel.json: >
     {
         "language": "python",
-        "display_name": "PyTorch with shared GPU",
+        "display_name": "GPU: TensorFlow (4GiB VRAM)",
         "metadata": {
             "process_proxy": {
             "class_name": "enterprise_gateway.services.processproxies.k8s.KubernetesProcessProxy",
             "config": {
-                "image_name": "192.168.40.246:30080/khamb/jupyter_kernel_torch_cuda:latest"
+                "image_name": "elyra/kernel-tf-gpu-py:3.2.3"
             }
             },
             "debugger": true
         },
-        "env": {},
+        "env": {
+            "KERNEL_GPU_MEMORY": "4096",
+            "KERNEL_KAI_SCHEDULER_QUEUE": "default-queue",
+            "TF_FORCE_GPU_ALLOW_GROWTH": "true",
+            "IPYTHONDIR": "/opt/custom_kernels/ipython_config",
+            "KERNEL_VOLUMES": "[{\"name\": \"shared-kernels\", \"persistentVolumeClaim\": {\"claimName\": \"kernel-specs-pvc\"}}]",
+            "KERNEL_VOLUME_MOUNTS": "[{\"name\": \"shared-kernels\", \"mountPath\": \"/opt/custom_kernels\"}]"
+        },
         "argv": [
             "python",
-            "/usr/local/share/jupyter/kernels/pytorch_gpu_sharing/launch_kubernetes.py",
+            "/usr/local/share/jupyter/kernels/tf_gpu_sharing_4GB/launch_kubernetes.py",
             "--RemoteProcessProxy.kernel-id",
             "{kernel_id}",
             "--RemoteProcessProxy.port-range",

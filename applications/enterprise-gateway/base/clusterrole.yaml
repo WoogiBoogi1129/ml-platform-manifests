@@ -69,3 +69,4 @@ rules:
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch", "create", "delete"]
 
+
