@@ -52,6 +52,8 @@ spec:
               value: "300"
             - name: EG_KERNEL_INFO_TIMEOUT
               value: "300"
+            - name: EG_KERNEL_RCONNECT_TIMEOUT
+              value: "120"
             # - name: EG_ALLOWED_KERNELS
             #   value: '["r_kubernetes","python_kubernetes","python_tf_kubernetes","python_tf_gpu_kubernetes","scala_kubernetes","spark_r_kubernetes","spark_python_kubernetes","spark_scala_kubernetes","spark_python_operator","tf_gpu_sharing","pytorch_gpu_sharing"]'
             - name: EG_DEFAULT_KERNEL_NAME
