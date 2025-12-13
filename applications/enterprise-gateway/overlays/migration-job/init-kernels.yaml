@@ -21,62 +21,26 @@ spec:
             SOURCE_DEFAULTS="/usr/local/share/jupyter/kernels"
             TARGET_DIR="/mnt/pvc"
             IPYTHON_DIR="$TARGET_DIR/ipython_config/profile_default/startup"
-
+            
             # 1. CLEANUP (Wipe PVC)
             echo "[1/4] Wiping old data..."
             rm -rf $TARGET_DIR/*
             mkdir -p $IPYTHON_DIR
 
-            # 2. WRITE SECURITY ENFORCER SCRIPT
-            echo "[2/4] Writing Security Script..."
-            cat <<EOF > $IPYTHON_DIR/00-enforce-limits.py
-            import os
-            import sys
+            # 2. WRITE SECURITY ENFORCER SCRIPT (FROM CONFIGMAP)
+            echo "[2/4] Installing Security Script from ConfigMap..."
             
-            # Read limit from Env Var (set in kernel.json)
-            mem_limit_mb = os.environ.get('KERNEL_GPU_MEMORY')
-
-            if mem_limit_mb:
-                try:
-                    limit_mb = int(mem_limit_mb)
-                    
-                    # --- TENSORFLOW LOCK ---
-                    try:
-                        import tensorflow as tf
-                        gpus = tf.config.list_physical_devices('GPU')
-                        if gpus:
-                            for gpu in gpus:
-                                config = tf.config.LogicalDeviceConfiguration(memory_limit=limit_mb)
-                                tf.config.set_logical_device_configuration(gpu, [config])
-                            
-                            # Lock configuration by forcing initialization
-                            tf.config.list_logical_devices('GPU')
-                            print(f"✅ [System] TensorFlow Hard Limit: {limit_mb} MB")
-                    except ImportError: pass 
-
-                    # --- PYTORCH LOCK ---
-                    try:
-                        import torch
-                        if torch.cuda.is_available():
-                            total_mem = torch.cuda.get_device_properties(0).total_memory / (1024**2)
-                            fraction = min(limit_mb / total_mem, 1.0)
-                            
-                            torch.cuda.set_per_process_memory_fraction(fraction, 0)
-                            
-                            # MONKEY PATCH (Security Lock)
-                            def locked(*args, **kwargs): raise PermissionError("⛔ Admin has locked GPU Memory settings.")
-                            torch.cuda.set_per_process_memory_fraction = locked
-                            
-                            print(f"✅ [System] PyTorch Hard Limit: {fraction:.2f} of GPU")
-                    except ImportError: pass 
-
-                except Exception as e:
-                    print(f"⚠️ [System] Enforcer Error: {e}")
-            EOF
+            # We copy instead of symlinking to ensure we own the file and can modify permissions
+            if [ -f "/mnt/gpu-enforcer/00-enforce-limits.py" ]; then
+                cp /mnt/gpu-enforcer/00-enforce-limits.py $IPYTHON_DIR/00-enforce-limits.py
+                echo " - Success: Security script installed."
+            else
+                echo " - ERROR: ConfigMap mount not found at /mnt/gpu-enforcer/00-enforce-limits.py"
+                exit 1
+            fi
 
             # 3. COPY DEFAULT KERNELS (Restore specific defaults)
             echo "[3/4] Copying specific defaults..."
-            # Add or remove kernels from this list as needed
             KERNELS_TO_COPY="r_kubernetes python_kubernetes python_tf_kubernetes scala_kubernetes spark_r_kubernetes spark_python_kubernetes spark_scala_kubernetes spark_python_operator"
             
             for KERNEL in $KERNELS_TO_COPY; do
@@ -105,6 +69,7 @@ spec:
             install_custom_kernel "/mnt/configmap-tf-8gb" "tf_gpu_sharing_8GB"
 
             # 5. PERMISSIONS FIX (Root -> Jovyan)
+            # This is critical so the Kernel Pod (running as jovyan) can read the file
             chown -R 1000:100 $TARGET_DIR
             chmod -R 755 $TARGET_DIR
             
@@ -113,6 +78,9 @@ spec:
         volumeMounts:
         - name: kernels-pvc
           mountPath: /mnt/pvc
+        - name: gpu-enforcer-vol
+          mountPath: /mnt/gpu-enforcer
+          readOnly: true
         - name: cm-pytorch-4gb
           mountPath: /mnt/configmap-pytorch-4gb
         - name: cm-tf-4gb
@@ -126,6 +94,10 @@ spec:
       - name: kernels-pvc
         persistentVolumeClaim:
           claimName: kernel-specs-pvc
+      - name: gpu-enforcer-vol
+        configMap:
+          name: gpu-enforcer-script
+          defaultMode: 0777
       - name: cm-pytorch-4gb
         configMap:
           name: kernel-spec-pytorch-gpu-4gb

@@ -9,3 +9,4 @@ rootPassword: minio123
 rootUser: minioadmin
 service:
   type: ClusterIP
+

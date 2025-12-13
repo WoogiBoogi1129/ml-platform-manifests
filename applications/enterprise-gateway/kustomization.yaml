@@ -23,8 +23,13 @@ resources:
   - base/clusterrole.yaml
   - base/clusterrolebinding.yaml
   - base/service.yaml
-  - overlays/configmap/tf-gpu-sharing.yaml
-  - overlays/configmap/pytorch-gpu-sharing.yaml
+  - overlays/pvc/kernel-specs-pvc.yaml
+  - overlays/configmap/tf-gpu-4GB.yaml
+  - overlays/configmap/tf-gpu-8GB.yaml
+  - overlays/configmap/pytorch-gpu-4GB.yaml
+  - overlays/configmap/pytorch-gpu-8GB.yaml
+  - overlays/configmap/gpu-enforce-limit.yaml
+  - overlays/migration-job/init-kernels.yaml
   - overlays/deployment/enterprise-gateway.yaml
   - overlays/kyverno/inject-jeg-env.yaml
 

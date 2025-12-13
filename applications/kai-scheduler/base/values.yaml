@@ -8,3 +8,4 @@ binder:
     runtimeClassName: nvidia-cdi
 global:
   gpuSharing: true
+

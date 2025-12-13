@@ -490,3 +490,4 @@ trivy:
   vulnType: os,library
 updateStrategy:
   type: RollingUpdate
+

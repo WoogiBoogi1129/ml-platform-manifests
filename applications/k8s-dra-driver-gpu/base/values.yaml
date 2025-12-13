@@ -6,3 +6,4 @@ gpuResourcesEnabledOverride: true
 resources:
   gpus:
     enabled: true
+
