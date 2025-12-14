@@ -56,8 +56,8 @@ spec:
               SRC=$1; NAME=$2; DEST="$TARGET_DIR/$NAME"
               mkdir -p $DEST
               cp $SRC/kernel.json $DEST/
-              cp $SRC/kernel-pod.yaml.j2 $DEST/
-              cp $SRC/launch_kubernetes.py $DEST/
+              cp /mnt/kernel-pod-template/kernel-pod.yaml.j2 $DEST/
+              cp /mnt/launch-k8s-kernel-script/launch_kubernetes.py $DEST/
               chmod +x $DEST/launch_kubernetes.py
               
               echo " - Installed $NAME"
@@ -81,6 +81,12 @@ spec:
         - name: gpu-enforcer-vol
           mountPath: /mnt/gpu-enforcer
           readOnly: true
+        - name: kernel-pod-template-vol
+          mountPath: /mnt/kernel-pod-template
+          readOnly: true
+        - name: launch-k8s-kernel-script-vol
+          mountPath: /mnt/launch-k8s-kernel-script
+          readOnly: true
         - name: cm-pytorch-4gb
           mountPath: /mnt/configmap-pytorch-4gb
         - name: cm-tf-4gb
@@ -97,6 +103,14 @@ spec:
       - name: gpu-enforcer-vol
         configMap:
           name: gpu-enforcer-script
+          defaultMode: 0777
+      - name: kernel-pod-template-vol
+        configMap:
+          name: kernel-pod-template
+          defaultMode: 0777
+      - name: launch-k8s-kernel-script-vol
+        configMap:
+          name: launch-k8s-kernel-script
           defaultMode: 0777
       - name: cm-pytorch-4gb
         configMap:

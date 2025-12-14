@@ -10,3 +10,4 @@ rootUser: minioadmin
 service:
   type: ClusterIP
 
+

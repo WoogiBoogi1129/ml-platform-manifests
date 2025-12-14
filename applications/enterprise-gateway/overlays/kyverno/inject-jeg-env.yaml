@@ -38,3 +38,7 @@ spec:
                 value: "1"
               - name: KERNEL_GPUS_LIMIT
                 value: "1"
+              - name: KERNEL_NAMESPACE
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
