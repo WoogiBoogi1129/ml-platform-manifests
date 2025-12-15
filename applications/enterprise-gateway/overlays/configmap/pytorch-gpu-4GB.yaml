@@ -18,7 +18,8 @@ data:
             "debugger": true
         },
         "env": {
-            "KERNEL_GPU_MEMORY": "4096",
+            "KERNEL_GPU_MEMORY": "3900",
+            "KERNEL_GPU_TYPE": "RTX-3090-Ti",
             "TF_FORCE_GPU_ALLOW_GROWTH": "true",
             "IPYTHONDIR": "/opt/custom_kernels/ipython_config"
         },

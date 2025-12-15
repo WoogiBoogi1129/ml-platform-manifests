@@ -23,6 +23,8 @@ data:
     spec:
       runtimeClassName: nvidia-cdi
       schedulerName: kai-scheduler
+      nodeSelector:
+        gpu-type: "{{ kernel_gpu_type }}"
       restartPolicy: Never
       serviceAccountName: "{{ kernel_service_account_name }}"
       {% if kernel_uid is defined or kernel_gid is defined %}
