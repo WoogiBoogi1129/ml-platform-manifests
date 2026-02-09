@@ -8,6 +8,9 @@ helm repo update
 helm install keycloak bitnami/keycloak \
     --namespace keycloak \
     --create-namespace \
+    --version 22.0.0 \
+    --set image.repository=bitnamilegacy/keycloak \
+    --set image.tag=25.0.2-debian-12-r0 \
     --set auth.adminUser=admin \
     --set auth.adminPassword=admin \
     --set service.type=NodePort \
