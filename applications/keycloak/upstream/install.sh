@@ -16,6 +16,9 @@ helm install keycloak bitnami/keycloak \
     --set service.type=NodePort \
     --set service.nodePorts.http=32008 \
     --set postgresql.enabled=true \
+    --set postgresql.image.registry=docker.io \
+    --set postgresql.image.repository=bitnamilegacy/postgresql \
+    --set postgresql.image.tag=16.3.0-debian-12-r23 \
     --set postgresql.auth.postgresPassword=keycloak \
     --set postgresql.auth.database=keycloak \
     --set production=false

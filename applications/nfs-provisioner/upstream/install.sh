@@ -364,15 +364,29 @@ helm "${helm_args[@]}"
 # 6. Verification
 # =========================
 # Find deployment by label to be robust against name changes
+# 1. Try standard chart labels (new charts)
 deploy_name="$(
   kubectl -n "${NAMESPACE}" get deploy \
     -l "app.kubernetes.io/instance=${RELEASE_NAME},app.kubernetes.io/name=nfs-subdir-external-provisioner" \
-    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
+    -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true
 )"
 
+# 2. Fallback: Try legacy labels (older charts)
 if [[ -z "${deploy_name}" ]]; then
-    # Fallback search if labels differ slightly in some chart versions
-    deploy_name="$(kubectl -n "${NAMESPACE}" get deploy -l "app=nfs-subdir-external-provisioner,release=${RELEASE_NAME}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)"
+    deploy_name="$(kubectl -n "${NAMESPACE}" get deploy -l "app=nfs-subdir-external-provisioner,release=${RELEASE_NAME}" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+fi
+
+# 3. Fallback: Try just 'app' label (broadest match)
+if [[ -z "${deploy_name}" ]]; then
+    deploy_name="$(kubectl -n "${NAMESPACE}" get deploy -l "app=nfs-subdir-external-provisioner" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+fi
+
+# 4. Last Resort: Guess name based on Release Name (standard Helm convention)
+if [[ -z "${deploy_name}" ]]; then
+    potential_name="${RELEASE_NAME}-nfs-subdir-external-provisioner"
+    if kubectl -n "${NAMESPACE}" get deploy "${potential_name}" >/dev/null 2>&1; then
+        deploy_name="${potential_name}"
+    fi
 fi
 
 if [[ -n "${deploy_name}" ]]; then
